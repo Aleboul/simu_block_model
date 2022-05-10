@@ -5,11 +5,11 @@ import random
 import pandas as pd
 plt.style.use('seaborn-whitegrid')
 
-import sys
-sys.path.insert(0, '/home/boulin/')
+#import sys
+#sys.path.insert(0, '/home/boulin/')
 
-from COPPY.coppy.rng.evd import Logistic, Asymmetric_logistic, Husler_Reiss
-from COPPY.coppy.rng.utils import simplex
+from coppy.rng.evd import Logistic, Asymmetric_logistic, Husler_Reiss
+from coppy.rng.utils import simplex
 from sklearn.cluster import KMeans
 
 
