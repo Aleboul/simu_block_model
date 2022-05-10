@@ -355,7 +355,6 @@ class tEV(Extreme):
 
     def _Sigma2Covar(self, index):
         """ Operation on the covariance matrix to sample from the extremal function.
-
         Input
         -----
             index : index of the location. An integer in {0, ..., \eqn{d-1}}
