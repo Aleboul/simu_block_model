@@ -366,8 +366,8 @@ def iter_pick_logistic(d1,d2,n_sample, n_iter):
     df = pd.DataFrame(output_store)
     return df
 
-df = iter_pick(d1,d2,n_sample,n_iter)
-df.to_csv('SECO_25_75_HR.csv')
+df = iter_pick_logistic(d1,d2,n_sample,n_iter)
+df.to_csv('SECO_25_75_LOGISTIC.csv')
 #print(df)
 #print(df.iloc[0])
 #fig, ax = plt.subplots()
