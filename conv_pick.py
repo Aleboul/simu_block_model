@@ -120,7 +120,7 @@ def log_rank(X, w):
     
     return np.power(np.mean(_ksi_), -1)
 
-def SECO(X, w, cols):
+def crit(X, w, cols):
     """ evaluation of the criteria
 
     Input
@@ -131,7 +131,7 @@ def SECO(X, w, cols):
 
     Output
     ------
-        Evaluate (A - A_\Sigma)(w)
+        Evaluate (theta - theta_\Sigma)
     
     """
 
@@ -140,7 +140,7 @@ def SECO(X, w, cols):
 
     ### Evaluate the cluster as a whole
 
-    value = d*wmado(X, w)
+    value = wmado(X, w)
 
     _value_ = []
     for c in clust:
@@ -149,7 +149,7 @@ def SECO(X, w, cols):
         w_c = w[index]
         wei_clu = np.sum(w_c) / np.sum(w) 
         _value = wmado(_X, w_c / np.sum(w_c))
-        _value_.append( d * wei_clu * _value)
+        _value_.append( wei_clu * _value)
 
     return -(value - np.sum(_value_))
 
@@ -164,8 +164,8 @@ def split(X):
     cols[0] = -1
     w = np.repeat(1/d, d)
 
-    conv_pick = SECO(X,w,cols)
-    convind   = SECO(X,w,colsind)
+    conv_pick = crit(X,w,cols)
+    convind   = crit(X,w,colsind)
 
     C = np.where(cols == -1)[0]
     R = np.where(cols == 1)[0]
@@ -173,12 +173,12 @@ def split(X):
     while(conv_pick > 0.012):
         for i in R :
             colsind[i] = -1
-            _convind = SECO(X,w,colsind)
+            _convind = crit(X,w,colsind)
             if (convind > _convind + 0.01):
                 convind = _convind
                 cols[i] *= -1
                 R = np.delete(R, np.where(R == i)[0])
-                conv_pick = SECO(X,w,cols)
+                conv_pick = crit(X,w,cols)
                 break
             else:
                 colsind[i] = i
@@ -280,12 +280,12 @@ n_iter = 200
 
 def iter_pick(d1,d2,n_sample, n_iter):
     """ Monte Carlo Simulation from Hüsler-Reiss model
-    to see the behaviour of the SECO criteria.
+    to see the behaviour of the crit criteria.
 
     Input
     -----
         d1       : length of the first cluster
-        d2       : length of the second cluster
+        d2       : length of the critnd cluster
         n_sample : observations
         n_iter   : number of iterations
     """
@@ -300,7 +300,7 @@ def iter_pick(d1,d2,n_sample, n_iter):
         Gamma = Sigma2Gamma(Sigma)
         copula1 = Husler_Reiss(n_sample = n_sample, d = d1+1, Sigma = Gamma)
         sample1 = copula1.sample_unimargin()
-        # Generate second sample
+        # Generate critnd sample
         Sigma = sym_matrix(d2, alea = True, a = 0.01, b=0.2) 
         Sigma = Sigma @ Sigma.T
         Gamma = Sigma2Gamma(Sigma)
@@ -311,12 +311,12 @@ def iter_pick(d1,d2,n_sample, n_iter):
         # initialization
         w = np.repeat(1/(d), d)
         grp = np.arange(d)
-        criteria = SECO(sample, w, grp)
+        criteria = crit(sample, w, grp)
         values.append(criteria)
         grp[0] = -1
         for j in range(1,d):
             grp[j] = -1
-            criteria = SECO(sample, w,grp)
+            criteria = crit(sample, w,grp)
             if j >= d1+1:
                 grp[j] = j
             values.append(criteria)
@@ -327,12 +327,12 @@ def iter_pick(d1,d2,n_sample, n_iter):
 
 def iter_pick_logistic(d1,d2,n_sample, n_iter):
     """ Monte Carlo Simulation from Hüsler-Reiss model
-    to see the behaviour of the SECO criteria.
+    to see the behaviour of the crit criteria.
 
     Input
     -----
         d1       : length of the first cluster
-        d2       : length of the second cluster
+        d2       : length of the critnd cluster
         n_sample : observations
         n_iter   : number of iterations
     """
@@ -344,7 +344,7 @@ def iter_pick_logistic(d1,d2,n_sample, n_iter):
         # Generate first sample
         copula1 = Logistic(n_sample = n_sample, d = d1+1, theta = np.random.uniform(0.3,0.6,1))
         sample1 = copula1.sample_unimargin()
-        # Generate second sample
+        # Generate critnd sample
         copula2 = Logistic(n_sample = n_sample, d = d2+1, theta = np.random.uniform(0.3,0.6,1))
         sample2 = copula2.sample_unimargin()
         # merge sample
@@ -352,12 +352,12 @@ def iter_pick_logistic(d1,d2,n_sample, n_iter):
         # initialization
         w = np.repeat(1/(d), d)
         grp = np.arange(d)
-        criteria = SECO(sample, w, grp)
+        criteria = crit(sample, w, grp)
         values.append(criteria)
         grp[0] = -1
         for j in range(1,d):
             grp[j] = -1
-            criteria = SECO(sample, w,grp)
+            criteria = crit(sample, w,grp)
             if j >= d1+1:
                 grp[j] = j
             values.append(criteria)
@@ -367,7 +367,7 @@ def iter_pick_logistic(d1,d2,n_sample, n_iter):
     return df
 
 df = iter_pick_logistic(d1,d2,n_sample,n_iter)
-df.to_csv('SECO_25_75_LOGISTIC.csv')
+df.to_csv('CRIT_25_75_LOGISTIC.csv')
 #print(df)
 #print(df.iloc[0])
 #fig, ax = plt.subplots()
