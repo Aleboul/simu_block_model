@@ -250,4 +250,4 @@ df = pd.DataFrame(results)
 
 print(df)
 
-df.to_csv('CRIT_25_75_LOGISTIC.csv')
+df.to_csv('CRIT_25_75_HR.csv')
