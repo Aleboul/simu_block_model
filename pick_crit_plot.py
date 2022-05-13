@@ -9,9 +9,8 @@ plt.style.use('seaborn-whitegrid')
 df = pd.read_csv('CRIT_25_75_HR.csv')
 df.drop(columns=df.columns[0], axis=1, inplace=True)
 df = df.stack()
-
 df = df * d
-
+print(df)
 df_plot = pd.DataFrame()
 df_plot['SECO'] = -df[0].diff()
 df_plot['d'] = np.arange(len(df_plot))+1

@@ -4,7 +4,7 @@ import pandas as pd
 import scipy as sp
 plt.style.use('seaborn-whitegrid')
 
-from coppy.rng.evd import Logistic, Asymmetric_logistic, Husler_Reiss
+from coppy.rng.evd import Husler_Reiss
 
 
 def ecdf(X):
@@ -121,15 +121,6 @@ def crit(X, w, cols):
     return -(value - np.sum(_value_))
 
 """
-    Model's constant
-"""
-
-def adapt_const(delta, card, d,n):
-    r = 2 * np.sqrt(2/n * np.log(4 * card / delta))
-    value_ = 2 * (card+1)/ d * r
-    return value_
-
-"""
     Function for HR model
 """
 
@@ -234,7 +225,7 @@ import multiprocessing as mp
 d1 = 24
 d2 = 74
 n_sample = 200
-n_iter = 8
+n_iter = 200
 pool = mp.Pool(processes= 8, initializer=init_pool_processes)
 
 input = {'d1' : d1, 'd2': d2, 'n_sample' : n_sample}
