@@ -1,14 +1,10 @@
-from cmath import log
 import numpy as np
 import matplotlib.pyplot as plt
-import random
 import pandas as pd
+import scipy as sp
 plt.style.use('seaborn-whitegrid')
 
-np.random.seed(42)
-
 from coppy.rng.evd import Logistic, Asymmetric_logistic, Husler_Reiss
-from coppy.rng.utils import simplex
 
 
 def ecdf(X):
@@ -183,116 +179,68 @@ def sym_matrix(d, entry = 0.5, alea = True, a = 0.0, b=1.0):
                     output[i,j], output[j,i] = entry, entry
 
     return np.matrix(output)
-        
-"""
-    Test
-"""
-np.random.seed(41)
-d = 400
-n = 200
-delta = 0.05
 
 """
     HR
 """
 
+def init_pool_processes():
+    sp.random.seed()
+
+def operation_logistic(dict, seed):
+    """ Operation to perform Monte carlo simulation
+
+    Input
+    -----
+        dict : dictionnary containing
+                - d1 : dimension of the first sample
+                - d2 : dimension of the second sample
+                - n_sample : sample's length
+    """
+    sp.random.seed(seed * 5)
+    values = []
+    # Generate first sample
+    copula1 = Logistic(n_sample = dict['n_sample'], d = dict['d1'], theta = np.random.uniform(0.3,0.8,1))
+    sample1 = copula1.sample_unimargin()
+    # Generate second sample
+    copula2 = Logistic(n_sample = dict['n_sample'], d = dict['d2'], theta = np.random.uniform(0.3,0.8,1))
+    sample2 = copula2.sample_unimargin()
+    # Merge both samples to obtain one
+    sample = np.hstack((sample1,sample2))
+    # initialization
+    d = dict['d1'] + dict['d2']
+    w = np.repeat(1/d,d)
+    grp = np.arange(d)
+    criteria = crit(sample, w, grp)
+    values.append(criteria)
+    grp[0] = -1
+    for j in range(1,d):
+        grp[j] = -1
+        criteria = crit(sample, w,grp)
+        if j >= d1+1:
+            grp[j] = j
+        values.append(criteria)
+
+    return values
+
+import multiprocessing as mp
+
 d1 = 24
 d2 = 74
 n_sample = 200
 n_iter = 200
+pool = mp.Pool(processes= 8, initializer=init_pool_processes)
 
-def iter_pick(d1,d2,n_sample, n_iter):
-    """ Monte Carlo Simulation from Hüsler-Reiss model
-    to see the behaviour of the crit criteria.
+input = {'d1' : d1+1, 'd2': d2+1, 'n_sample' : n_sample}
 
-    Input
-    -----
-        d1       : length of the first cluster
-        d2       : length of the critnd cluster
-        n_sample : observations
-        n_iter   : number of iterations
-    """
-    output_store = []
-    d = d1 + d2 + 2
-    for n in range(0, n_iter):
-        print(n)
-        values = []
-        # Generate first sample
-        Sigma = sym_matrix(d1, alea = True, a = 0.1, b=0.2) 
-        Sigma = Sigma @ Sigma.T
-        Gamma = Sigma2Gamma(Sigma)
-        copula1 = Husler_Reiss(n_sample = n_sample, d = d1+1, Sigma = Gamma)
-        sample1 = copula1.sample_unimargin()
-        # Generate critnd sample
-        Sigma = sym_matrix(d2, alea = True, a = 0.01, b=0.2) 
-        Sigma = Sigma @ Sigma.T
-        Gamma = Sigma2Gamma(Sigma)
-        copula2 = Husler_Reiss(n_sample = n_sample, d = d2+1, Sigma = Gamma)
-        sample2 = copula2.sample_unimargin()
-        # merge sample
-        sample = np.hstack((sample1, sample2))
-        # initialization
-        w = np.repeat(1/(d), d)
-        grp = np.arange(d)
-        criteria = crit(sample, w, grp)
-        values.append(criteria)
-        grp[0] = -1
-        for j in range(1,d):
-            grp[j] = -1
-            criteria = crit(sample, w,grp)
-            if j >= d1+1:
-                grp[j] = j
-            values.append(criteria)
-        output_store.append(values)
-    column = np.arange(d)+1
-    df = pd.DataFrame(output_store)
-    return df
+result_objects = [pool.apply_async(operation_logistic, args = (input,i)) for i in range(n_iter)]
 
-def iter_pick_logistic(d1,d2,n_sample, n_iter):
-    """ Monte Carlo Simulation from Hüsler-Reiss model
-    to see the behaviour of the crit criteria.
+results = [r.get() for r in result_objects]
 
-    Input
-    -----
-        d1       : length of the first cluster
-        d2       : length of the critnd cluster
-        n_sample : observations
-        n_iter   : number of iterations
-    """
-    output_store = []
-    d = d1 + d2 + 2
-    for n in range(0, n_iter):
-        print(n)
-        values = []
-        # Generate first sample
-        copula1 = Logistic(n_sample = n_sample, d = d1+1, theta = np.random.uniform(0.3,0.6,1))
-        sample1 = copula1.sample_unimargin()
-        # Generate critnd sample
-        copula2 = Logistic(n_sample = n_sample, d = d2+1, theta = np.random.uniform(0.3,0.6,1))
-        sample2 = copula2.sample_unimargin()
-        # merge sample
-        sample = np.hstack((sample1, sample2))
-        # initialization
-        w = np.repeat(1/(d), d)
-        grp = np.arange(d)
-        criteria = crit(sample, w, grp)
-        values.append(criteria)
-        grp[0] = -1
-        for j in range(1,d):
-            grp[j] = -1
-            criteria = crit(sample, w,grp)
-            if j >= d1+1:
-                grp[j] = j
-            values.append(criteria)
-        output_store.append(values)
-    column = np.arange(d)+1
-    df = pd.DataFrame(output_store)
-    return df
+pool.close()
+pool.join()
 
-df = iter_pick_logistic(d1,d2,n_sample,n_iter)
+print(results)
+df = pd.DataFrame(results)
+
 df.to_csv('CRIT_25_75_LOGISTIC.csv')
-#print(df)
-#print(df.iloc[0])
-#fig, ax = plt.subplots()
-#ax.plot(np.arange(d1+d2 + 2)+ 1, df.iloc[0])
-#plt.savefig('pick_crit.pdf')

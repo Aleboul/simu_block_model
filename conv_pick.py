@@ -131,7 +131,7 @@ def crit(X, w, cols):
 
     Output
     ------
-        Evaluate (theta - theta_\Sigma)
+        Evaluate (theta - theta_\Sigma) 
     
     """
 
