@@ -191,19 +191,17 @@ def operation_hr(dict, seed):
     sp.random.seed(seed * 5)
     values = []
     # Generate first sample
-    Gamma = sym_matrix(d1, alea = True, a = 0.1, b=0.2) 
-    copula1 = Husler_Reiss(n_sample = n_sample, d = d1+1, Sigma = Gamma)
+    Gamma = sym_matrix(dict['d1'], alea = True, a = 0.2, b=1.0) 
+    copula1 = Husler_Reiss(n_sample = dict['n_sample'], d = d1, Sigma = Gamma)
     sample1 = copula1.sample_unimargin()
     # Generate critnd sample
-    Sigma = sym_matrix(d2, alea = True, a = 0.01, b=0.2) 
-    Sigma = Sigma @ Sigma.T
-    Gamma = Sigma2Gamma(Sigma)
-    copula2 = Husler_Reiss(n_sample = n_sample, d = d2+1, Sigma = Gamma)
+    Gamma = sym_matrix(dict['d2'], alea = True, a = 0.2, b=1.0) 
+    copula2 = Husler_Reiss(n_sample = dict['n_sample'], d = d2, Sigma = Gamma)
     sample2 = copula2.sample_unimargin()
     # merge sample
     sample = np.hstack((sample1, sample2))
     # initialization
-    d = dict['d1'] + dict['d2'] +2
+    d = dict['d1'] + dict['d2']
     w = np.repeat(1/(d), d)
     grp = np.arange(d)
     criteria = crit(sample, w, grp)
@@ -220,8 +218,8 @@ def operation_hr(dict, seed):
 
 import multiprocessing as mp
 
-d1 = 24
-d2 = 74
+d1 = 25
+d2 = 75
 n_sample = 200
 n_iter = 200
 pool = mp.Pool(processes= 8, initializer=init_pool_processes)
