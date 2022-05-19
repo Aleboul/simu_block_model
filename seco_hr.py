@@ -192,11 +192,11 @@ def operation_hr(dict, seed):
     values = []
     # Generate first sample
     Gamma = sym_matrix(dict['d1'], alea = True, a = 0.2, b=1.0) 
-    copula1 = Husler_Reiss(n_sample = dict['n_sample'], d = d1, Sigma = Gamma)
+    copula1 = Husler_Reiss(n_sample = dict['n_sample'], d = dict['d1'], Sigma = Gamma)
     sample1 = copula1.sample_unimargin()
     # Generate critnd sample
     Gamma = sym_matrix(dict['d2'], alea = True, a = 0.2, b=1.0) 
-    copula2 = Husler_Reiss(n_sample = dict['n_sample'], d = d2, Sigma = Gamma)
+    copula2 = Husler_Reiss(n_sample = dict['n_sample'], d = dict['d2'], Sigma = Gamma)
     sample2 = copula2.sample_unimargin()
     # merge sample
     sample = np.hstack((sample1, sample2))
