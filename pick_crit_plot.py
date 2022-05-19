@@ -13,12 +13,12 @@ df = df.stack()
 df = df * d
 df_plot = pd.DataFrame()
 df_plot['SECO'] = -df[0][range(d1)].diff()
-df_plot['d'] = np.arange(len(df_plot))+1
+df_plot['d'] = np.arange(0,d1)
 
 for i in range(1,200):
     _df = pd.DataFrame()
     _df['SECO'] = -df[i][range(d1)].diff()
-    _df['d'] = np.arange(1,d1+1)
+    _df['d'] = np.arange(0,d1)
     df_plot = pd.concat([df_plot, _df])
 
 print(df_plot.d.values)
@@ -37,13 +37,13 @@ plt.savefig("boxplot_dep.pdf")
 #plt.savefig('pick_crit.pdf')
 
 df_plot = pd.DataFrame()
-df_plot['SECO'] = df[0][d1] - df[0][(d1+1):].values
-df_plot['d'] = np.arange(d1+1,d)
+df_plot['SECO'] = df[0][d1-1] - df[0][(d1):].values
+df_plot['d'] = np.arange(d1,d)
 
 for i in range(1,200):
     _df = pd.DataFrame()
-    _df['SECO'] = df[i][d1] - df[i][(d1+1):].values
-    _df['d'] = np.arange(d1+1,d)
+    _df['SECO'] = df[i][d1-1] - df[i][(d1):].values
+    _df['d'] = np.arange(d1,d)
     df_plot = pd.concat([df_plot, _df])
 
 print(df_plot)

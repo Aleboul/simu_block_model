@@ -218,13 +218,13 @@ def operation_hr(dict, seed):
 
 import multiprocessing as mp
 
-d1 = 25
-d2 = 75
+d1 = 24
+d2 = 74
 n_sample = 200
 n_iter = 200
 pool = mp.Pool(processes= 8, initializer=init_pool_processes)
 
-input = {'d1' : d1, 'd2': d2, 'n_sample' : n_sample}
+input = {'d1' : d1+1, 'd2': d2+1, 'n_sample' : n_sample}
 
 result_objects = [pool.apply_async(operation_hr, args = (input,i)) for i in range(n_iter)]
 
