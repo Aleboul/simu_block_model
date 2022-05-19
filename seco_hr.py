@@ -157,14 +157,14 @@ def Sigma2Gamma(Sigma, k = 0, full = False):
     return Gamma
 
 def sym_matrix(d, entry = 0.5, alea = True, a = 0.0, b=1.0):
-    output = np.ones((d,d))
+    output = np.zeros((d,d))
+    entry = np.random.uniform(a, b, size = 1)
     for i in range(0,d):
         for j in range(0,i):
             if i == j:
                 output[i,i] = 0.0
             else :
                 if alea:
-                    entry = np.random.uniform(a, b, size = 1)
                     output[i,j], output[j,i] = entry, entry
                 else :
                     output[i,j], output[j,i] = entry, entry
@@ -191,9 +191,7 @@ def operation_hr(dict, seed):
     sp.random.seed(seed * 5)
     values = []
     # Generate first sample
-    Sigma = sym_matrix(d1, alea = True, a = 0.1, b=0.2) 
-    Sigma = Sigma @ Sigma.T
-    Gamma = Sigma2Gamma(Sigma)
+    Gamma = sym_matrix(d1, alea = True, a = 0.1, b=0.2) 
     copula1 = Husler_Reiss(n_sample = n_sample, d = d1+1, Sigma = Gamma)
     sample1 = copula1.sample_unimargin()
     # Generate critnd sample
