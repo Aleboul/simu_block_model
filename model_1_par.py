@@ -160,7 +160,7 @@ d1 = 100
 d2 = 100
 n_sample = [100,200,300,400,500,600,700,800,900,1000]
 n_iter = 100
-pool = mp.Pool(processes= 1, initializer=init_pool_processes)
+pool = mp.Pool(processes= 10, initializer=init_pool_processes)
 
 stockage = []
 
