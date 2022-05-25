@@ -61,41 +61,13 @@ def find_max(M):
     i , j = np.where(M == max_value)
     return i[0], j[0]
 
-d1 = 20
-d2 = 20
+d = 2
 n_sample = 1000
+copula = Logistic(n_sample = n_sample, d = d, theta = 0.7)
+sample = copula.sample_unimargin()
 
-copula1 = Logistic(n_sample = n_sample, d = d1, theta = 0.5)
-copula2 = Logistic(n_sample = n_sample, d = d2, theta = 0.5)
-sample1 = copula1.sample_unimargin()
-sample2 = copula2.sample_unimargin()
-sample = np.hstack([sample1, sample2])
-d = sample.shape[1]
-R = np.zeros([n_sample,d])
-for j in range(0,d):
-    X_vec = sample[:,j]
-    R[:,j] = ecdf(X_vec)
+fig, ax = plt.subplots()
 
-Theta = np.ones([d,d])
-for j in range(0,d):
-    for i in range(0,j):
-        Theta[i,j] = Theta[j,i] = 2 - theta(R[:,[i,j]])
+ax.scatter(sample[:,0], sample[:,1], edgecolor = 'blue', color = None)
 
-alpha = 2 * np.sqrt(np.log(d)/n_sample)
-print(alpha)
-
-S = np.arange(d)
-Theta_sub = Theta[S,:][:,S]
-#print(Theta_sub)
-a_l, b_l = find_max(Theta_sub)
-print(a_l, b_l)
-print(Theta_sub[a_l,b_l])
-index_a = np.where(Theta_sub[a_l,:] >= alpha)
-index_b = np.where(Theta_sub[a_l,:] >=alpha)
-cluster = {}
-cluster[0] = np.intersect1d(index_a,index_b)
-
-print(cluster[0])
-
-S = np.delete(S, cluster[0])
-print(S)
+plt.savefig('plot.pdf')

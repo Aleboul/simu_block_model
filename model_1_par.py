@@ -156,8 +156,8 @@ def operation_model_1(dict, seed):
 
 import multiprocessing as mp
 
-d1 = 100
-d2 = 100
+d1 = 800
+d2 = 800
 n_sample = [100,200,300,400,500,600,700,800,900,1000]
 n_iter = 100
 pool = mp.Pool(processes= 10, initializer=init_pool_processes)
@@ -182,6 +182,6 @@ pool.close()
 pool.join()
 
 
-df.to_csv('results_model_1_200.csv')
+df.to_csv('results_model_1_1600.csv')
 
 
