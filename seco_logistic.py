@@ -133,7 +133,7 @@ def operation_logistic(dict, seed):
                 - d2 : dimension of the second sample
                 - n_sample : sample's length
     """
-    sp.random.seed(seed * 5)
+    sp.random.seed(seed * 1)
     values = []
     # Generate first sample
     copula1 = Logistic(n_sample = dict['n_sample'], d = dict['d1'], theta = np.random.uniform(0.3,0.8,1))
