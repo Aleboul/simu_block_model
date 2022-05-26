@@ -4,6 +4,8 @@ import pandas as pd
 import scipy as sp
 plt.style.use('seaborn-whitegrid')
 
+from sklearn.cluster import AgglomerativeClustering
+
 from coppy.rng.evd import Logistic
 def ecdf(X):
     """ Compute uniform ECDF.
@@ -104,17 +106,19 @@ def clust(Theta, n, alpha = None):
 
 def perc_exact_recovery(O_hat, O_bar):
     value = 0
-    for true_clust in O_bar:
-        for est_clust in O_hat:
+    for true_clust in O_bar.items():
+        for est_clust in O_hat.items():
             test = np.intersect1d(true_clust,est_clust)
+            print(test, true_clust)
             if len(test) > 0 and test == true_clust :
+                print('plop')
                 value +=1
     return value / len(O_hat)
 
 
 
-d1 = 1600
-d2 = 1600
+d1 = 20
+d2 = 20
 n_sample = 1000
 
 copula1 = Logistic(n_sample = n_sample, d = d1, theta = 0.7)
@@ -132,11 +136,23 @@ for j in range(0,d):
 Theta = np.ones([d,d])
 for j in range(0,d):
     for i in range(0,j):
-        Theta[i,j] = Theta[j,i] = 2 - theta(R[:,[i,j]])
+        Theta[i,j] = Theta[j,i] = np.maximum(2 - theta(R[:,[i,j]]),0)
 
-O_hat = clust(Theta, n = n_sample)
-print(O_hat)
-O_bar = {1 : np.arange(0,d1), 2 : np.arange(d1,d1+d2)}
-print(O_bar)
+print(Theta)
 
-print(perc_exact_recovery(O_hat, O_bar))
+HC = AgglomerativeClustering(n_clusters=2, affinity = 'precomputed', linkage = 'complete').fit(Theta)
+labels = HC.labels_
+label = np.unique(labels)
+O_hat = {}
+
+for lab, l in enumerate(label):
+    l += 1
+    index = np.where(labels == lab)
+    O_hat[l] = index
+
+for est_clust in O_hat.items():
+    print(est_clust)
+#O_bar = {1 : np.arange(0,d1), 2 : np.arange(d1,d1+d2)}
+#print(O_bar)
+#
+#print(perc_exact_recovery(O_hat, O_bar))

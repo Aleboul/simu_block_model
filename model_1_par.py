@@ -104,8 +104,8 @@ def clust(Theta, n, alpha = None):
 
 def perc_exact_recovery(O_hat, O_bar):
     value = 0
-    for true_clust in O_bar:
-        for est_clust in O_hat:
+    for true_clust in O_bar.items():
+        for est_clust in O_hat.items():
             test = np.intersect1d(true_clust,est_clust)
             if len(test) > 0 and test == true_clust :
                 value +=1
