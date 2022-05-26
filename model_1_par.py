@@ -104,12 +104,13 @@ def clust(Theta, n, alpha = None):
 
 def perc_exact_recovery(O_hat, O_bar):
     value = 0
-    for true_clust in O_bar.items():
-        for est_clust in O_hat.items():
-            test = np.intersect1d(true_clust,est_clust)
-            if len(test) > 0 and test == true_clust :
-                value +=1
-    return value / len(O_hat)
+    for key1, true_clust in O_bar.items():
+        for key2, est_clust in O_hat.items():
+            if len(true_clust) == len(est_clust):
+                test = np.intersect1d(true_clust,est_clust)
+                if len(test) > 0 and np.sum(np.sort(test) - np.sort(true_clust)) == 0 :
+                    value +=1
+    return value / len(O_bar)
 
 def init_pool_processes():
     sp.random.seed()
