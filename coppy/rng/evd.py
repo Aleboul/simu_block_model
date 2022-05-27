@@ -441,16 +441,14 @@ class Bilog(Extreme):
         raise NotImplementedError
 
     def rExtFunc(self, index, normalize = True):
-        """ Random variate generation for Dirichlet distribution on \eqn{S_{d}}{Sd}
-        A function to sample Dirichlet random variables, based on the representation
-        as ratios of Gamma. 
+        """ Generate from bilogistic \eqn{Y \sim {P_x}}, where
+            \eqn{P_{x}} is the probability of extremal functions. 
 
         Input
         -----
             n         : sample size
-            alpha     : vector of parameter
-            normalize : If \code{False}, the function returns Gamma variates with parameter
-                        \code{alpha}.
+            index     : index of the location. An integer in {0, ..., \eqn{d-1}}
+            theta     : a \eqn{d} dimensional vector of positive parameter values for the Dirichlet vector
         """
         alpha_star = np.ones(self.d)
         sample = np.zeros(self.d)

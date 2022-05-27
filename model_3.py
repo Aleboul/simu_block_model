@@ -1,13 +1,10 @@
 import numpy as np
+from coppy.rng.evd import Logistic
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy as sp
 plt.style.use('seaborn-whitegrid')
 
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.cluster import KMeans
-
-from coppy.rng.evd import Logistic
 def ecdf(X):
     """ Compute uniform ECDF.
     
@@ -62,6 +59,7 @@ def find_max(M, S):
     mask[np.ix_(S,S)] = values
     np.fill_diagonal(mask,0)
     max_value = M[mask].max()
+    print(np.multiply(M, mask * 1))
     i , j = np.where(np.multiply(M, mask * 1) == max_value) # Sometimes doublon happens for excluded clusters, if n is low
     return i[0], j[0]
 
@@ -89,7 +87,7 @@ def clust(Theta, n, alpha = None):
         alpha = 2 * np.sqrt(np.log(d)/n)
     
     cluster = {}
-    while len(S) > 0:
+    while len(S) > 0 and l < 10:
         l = l + 1
         if len(S) == 1:
             cluster[l] = np.array(S)
@@ -100,8 +98,9 @@ def clust(Theta, n, alpha = None):
             else :
                 index_a = np.where(Theta[a_l,:] >= alpha)
                 index_b = np.where(Theta[b_l,:] >= alpha)
-                cluster[l] = np.intersect1d(index_a,index_b)
+                cluster[l] = np.intersect1d(S,index_a,index_b)
         S = np.setdiff1d(S, cluster[l])
+        print(S, cluster[l])
     
     return cluster
 
@@ -115,18 +114,39 @@ def perc_exact_recovery(O_hat, O_bar):
                     value +=1
     return value / len(O_bar)
 
+def make_sample(d, n_sample, K):
+    probs = []
+    for k in range(1,K-5):
+        p = 1 / 2**k
+        probs.append(p)
 
-d1 = 100
-d2 = 100
-n_sample = 200
+    p = 1 - np.sum(probs)
+    probs.append(p)
+    sizes = np.random.multinomial(d-5, probs)
+    sizes = np.hstack([sizes, np.ones(5)]).astype(int)
+    sample = []
+    _d = 0
+    O_bar = {}
+    l=0
+    for d_ in sizes :
+        l += 1
+        theta = np.random.uniform(0.65,0.75, size = 1)
+        copula = Logistic(theta = theta, n_sample = n_sample, d = d_)
+        sample_ = copula.sample_unimargin()
+        sample.append(sample_)
+        O_bar[l] = np.arange(_d, _d + d_)
+        _d += d_
 
-copula1 = Logistic(n_sample = n_sample, d = d1, theta = 0.7)
-copula2 = Logistic(n_sample = n_sample, d = d2, theta = 0.7)
-sample1 = copula1.sample_unimargin()
-sample2 = copula2.sample_unimargin()
-sample = np.hstack([sample1, sample2])
+    sample = np.hstack(sample)
 
-d = sample.shape[1]
+    return sample, O_bar
+
+K = 10
+d = 200
+n_sample = 100
+
+sample, O_bar = make_sample(d, n_sample, K)
+
 R = np.zeros([n_sample,d])
 for j in range(0,d):
     X_vec = sample[:,j]
@@ -135,22 +155,11 @@ for j in range(0,d):
 Theta = np.ones([d,d])
 for j in range(0,d):
     for i in range(0,j):
-        Theta[i,j] = Theta[j,i] = np.maximum(2 - theta(R[:,[i,j]]),0)
+        Theta[i,j] = Theta[j,i] = 2 - theta(R[:,[i,j]])
 
-
-#HC = KMeans(n_clusters=2).fit(sample)
-#labels = HC.labels_
-#label = np.unique(labels)
-#O_hat = {}
-#
-#for lab, l in enumerate(label):
-#    l += 1
-#    index = np.where(labels == lab)
-#    O_hat[l] = index
 O_hat = clust(Theta, n = n_sample)
 
 print(O_hat)
-
-O_bar = {1 : np.arange(0,d1), 2 : np.arange(d1,d1+d2)}
+print(O_bar)
 
 print(perc_exact_recovery(O_hat, O_bar))

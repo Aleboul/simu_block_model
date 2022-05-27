@@ -89,7 +89,7 @@ def clust(Theta, n, alpha = None):
         alpha = 2 * np.sqrt(np.log(d)/n)
     
     cluster = {}
-    while len(S) > 0 and l < 10:
+    while len(S) > 0:
         l = l + 1
         if len(S) == 1:
             cluster[l] = np.array(S)
@@ -100,11 +100,10 @@ def clust(Theta, n, alpha = None):
             else :
                 index_a = np.where(Theta[a_l,:] >= alpha)
                 index_b = np.where(Theta[b_l,:] >= alpha)
-                cluster[l] = np.intersect1d(S,index_a,index_b)
+                cluster[l] = np.intersect1d(index_a,index_b)
         S = np.setdiff1d(S, cluster[l])
     
     return cluster
-
 
 def perc_exact_recovery(O_hat, O_bar):
     value = 0
@@ -115,6 +114,32 @@ def perc_exact_recovery(O_hat, O_bar):
                 if len(test) > 0 and np.sum(np.sort(test) - np.sort(true_clust)) == 0 :
                     value +=1
     return value / len(O_bar)
+
+def make_sample(d, n_sample, K):
+    probs = []
+    for k in range(1,K):
+        p = 1 / 2**k
+        probs.append(p)
+
+    p = 1 - np.sum(probs)
+    probs.append(p)
+    sizes = np.random.multinomial(d, probs)
+    sample = []
+    _d = 0
+    O_bar = {}
+    l=0
+    for d_ in sizes :
+        l += 1
+        theta = np.random.uniform(0.65,0.75, size = 1)
+        copula = Logistic(theta = theta, n_sample = n_sample, d = d_)
+        sample_ = copula.sample_unimargin()
+        sample.append(sample_)
+        O_bar[l] = np.arange(_d, _d + d_)
+        _d += d_
+
+    sample = np.hstack(sample)
+
+    return sample, O_bar
 
 def init_pool_processes():
     sp.random.seed()
@@ -130,17 +155,7 @@ def operation_model_1_ECO(dict, seed):
                 - n_sample : sample's length
     """
 
-    sp.random.seed(1*seed)
-    # Generate first sample
-    copula1 = Logistic(n_sample = dict['n_sample'], d = dict['d1'], theta = 0.7)
-    sample1 = copula1.sample_unimargin()
-    # Generate second sample
-    copula2 = Logistic(n_sample = dict['n_sample'], d = dict['d2'], theta = 0.7)
-    sample2 = copula2.sample_unimargin()
-    # Merge both samples to obtain one
-    sample = np.hstack((sample1,sample2))
-    # initialization
-    d = sample.shape[1]
+    sample, O_bar = make_sample(dict['d'], dict['n_sample'], dict['K'])
 
     R = np.zeros([dict['n_sample'], d])
     for j in range(0,d):
@@ -153,7 +168,6 @@ def operation_model_1_ECO(dict, seed):
             Theta[i,j] = Theta[j,i] = 2 - theta(R[:,[i,j]])
 
     O_hat = clust(Theta, n = dict['n_sample'])
-    O_bar = {1 : np.arange(0,dict['d1']), 2 : np.arange(dict['d1'],d)}
 
     perc = perc_exact_recovery(O_hat, O_bar)
 
@@ -202,8 +216,6 @@ def operation_model_1_HC(dict, seed):
         index = np.where(labels == lab)
         O_hat[l] = index
 
-    O_bar = {1 : np.arange(0,d1), 2 : np.arange(d1,d1+d2)}
-
     perc = perc_exact_recovery(O_hat, O_bar)
 
     return perc
@@ -249,17 +261,17 @@ def operation_model_1_KMeans(dict, seed):
 
 import multiprocessing as mp
 
-d1 = 100
-d2 = 100
+d = 1600
+K = 5
 n_sample = [100,200,300,400,500,600,700,800,900,1000]
 n_iter = 100
 pool = mp.Pool(processes= 10, initializer=init_pool_processes)
-mode = "KMeans"
+mode = "ECO"
 stockage = []
 
 for n in n_sample:
 
-    input = {'d1' : d1, 'd2': d2, 'n_sample' : n}
+    input = {'d' : d, 'n_sample' : n, 'K' : K}
 
     if mode == "ECO":
 
@@ -286,6 +298,6 @@ pool.close()
 pool.join()
 
 
-df.to_csv('results_model_1_KMeans_200.csv')
+df.to_csv('results_model_2_ECO_1600.csv')
 
 
