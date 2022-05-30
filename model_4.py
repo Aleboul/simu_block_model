@@ -167,7 +167,7 @@ fig, ax = plt.subplots()
 sns.heatmap(Theta_sample, cmap = 'OrRd')
 plt.savefig("chiab_sampled.pdf")
 
-O_hat = clust(Theta, n = n_sample, alpha = 0.6)
+O_hat = clust(Theta, n = n_sample, alpha = 0.7)
 
 
 print(O_hat)
