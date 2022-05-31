@@ -85,7 +85,7 @@ def SECO(R_1, R_2, clst):
         _R_2 = R_2[:,c]
         _value_.append(theta(_R_2))
 
-    return np.abs(np.sum(_value_) - value)
+    return np.sum(_value_) - value
 
 def find_max(M, S):
     mask = np.zeros(M.shape, dtype = bool)
