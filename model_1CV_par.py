@@ -7,7 +7,10 @@ plt.style.use('seaborn-whitegrid')
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.cluster import KMeans
 
-from coppy.rng.evd import Husler_Reiss
+from sklearn.model_selection import train_test_split
+
+
+from coppy.rng.evd import Logistic
 def ecdf(X):
     """ Compute uniform ECDF.
     
@@ -55,6 +58,34 @@ def theta(R) :
 
     value = (mado + 1/2) / (1/2-mado)
     return value
+
+def SECO(R_1, R_2, clst):
+    """ evaluation of the criteria
+
+    Input
+    -----
+        R (np.array(float)) : n x d rank matrix
+                  w (float) : element of the simplex
+           cols (list(int)) : partition of the columns
+
+    Output
+    ------
+        Evaluate (theta - theta_\Sigma) 
+    
+    """
+
+    d = R_1.shape[0]
+
+    ### Evaluate the cluster as a whole
+
+    value = theta(R_1)
+
+    _value_ = []
+    for key, c in clst.items():
+        _R_2 = R_2[:,c]
+        _value_.append(theta(_R_2))
+
+    return np.abs(np.sum(_value_) - value)
 
 def find_max(M, S):
     mask = np.zeros(M.shape, dtype = bool)
@@ -116,36 +147,23 @@ def perc_exact_recovery(O_hat, O_bar):
                     value +=1
     return value / len(O_bar)
 
-def random_gamma(d, clst, L = 10e5):
-    h_tilde = np.zeros((d,2))
-    h_tilde[:,0] = np.random.pareto(a = 2.5, size = d)
-    h_tilde[clst['1'],1] = L
-    variogram = np.zeros((d,d))
-    for i in range(0,d):
-        for j in range(0,i):
-            value = 3/d * (np.linalg.norm(h_tilde[i,:] - h_tilde[j,:]))
-            variogram[i,j] = variogram[j,i] = value
+def make_sample(d1, d2, n_sample):
+    copula1 = Logistic(n_sample = n_sample, d = d1, theta = 0.7)
+    copula2 = Logistic(n_sample = n_sample, d = d2, theta = 0.7)
+    sample1 = copula1.sample_unimargin()
+    sample2 = copula2.sample_unimargin()
+    sample = np.hstack([sample1, sample2])
 
-    return np.matrix(variogram)
+    train_sample, test_sample = train_test_split(sample, train_size = 1/3)
 
-def make_sample(d, n_sample):
-    clst = {'1' : np.arange(0,40), '2' : np.arange(40,100)}
-    Gamma = random_gamma(d = d, clst = clst)
-    copula = Husler_Reiss(d=d, n_sample = n_sample // 2, Sigma = Gamma)
-    sample1 = copula.sample_unimargin()
+    test_sample_1, test_sample_2 = train_test_split(test_sample, train_size = 1/2)
 
-    clst = {'1' : np.arange(20,60), '2' : np.hstack((np.arange(0,20), np.arange(60,100))) }
-    Gamma = random_gamma(d = d, clst = clst)
-    copula = Husler_Reiss(d = d, n_sample = n_sample // 2, Sigma = Gamma)
-    sample2 = copula.sample_unimargin()
-    sample = np.vstack([sample1,sample2])
-
-    return sample
+    return train_sample, test_sample_1, test_sample_2
 
 def init_pool_processes():
     sp.random.seed()
 
-def operation_model_1_ECO(dict, seed, alpha):
+def operation_model_1CV_ECO(dict, seed):
     """ Operation to perform Monte carlo simulation
 
     Input
@@ -156,13 +174,14 @@ def operation_model_1_ECO(dict, seed, alpha):
                 - n_sample : sample's length
     """
     sp.random.seed(1*seed)
-    sample = make_sample(dict['d'], dict['n_sample'])
 
-    O_bar = {'1' : np.arange(0,20), '2' : np.arange(20,40), '3' : np.arange(40,60), '4' : np.arange(60,100)}
+    train_sample, test_sample_1, test_sample_2 = make_sample(dict['d1'], dict['d2'], dict['n_sample'])
+    # initialization
+    d = train_sample.shape[1]
 
-    R = np.zeros([dict['n_sample'], d])
+    R = np.zeros([train_sample.shape[0], d])
     for j in range(0,d):
-        X_vec = sample[:,j]
+        X_vec = train_sample[:,j]
         R[:,j] = ecdf(X_vec)
     
     Theta = np.ones([d,d])
@@ -170,28 +189,53 @@ def operation_model_1_ECO(dict, seed, alpha):
         for i in range(0,j):
             Theta[i,j] = Theta[j,i] = 2 - theta(R[:,[i,j]])
 
-    O_hat = clust(Theta, n = dict['n_sample'], alpha = alpha)
+    O_hat = clust(Theta, n = dict['n_sample'], alpha = dict['alpha'])
+    O_bar = {1 : np.arange(0,dict['d1']), 2 : np.arange(dict['d1'],d)}
 
     perc = perc_exact_recovery(O_hat, O_bar)
 
-    return perc
+    R_1 = np.zeros([test_sample_1.shape[0], d])
+    for j in range(0,d):
+        X_vec = test_sample_1[:,j]
+        R_1[:,j] = ecdf(X_vec)
+    
+    Theta = np.ones([d,d])
+    for j in range(0,d):
+        for i in range(0,j):
+            Theta[i,j] = Theta[j,i] = 2 - theta(R_1[:,[i,j]])
+
+    R_2 = np.zeros([test_sample_2.shape[0], d])
+    for j in range(0,d):
+        X_vec = test_sample_2[:,j]
+        R_2[:,j] = ecdf(X_vec)
+
+    Theta = np.ones([d,d])
+    for j in range(0,d):
+        for i in range(0,j):
+            Theta[i,j] = Theta[j,i] = 2 - theta(R_2[:,[i,j]])
+
+    seco = SECO(R_1, R_2, O_hat)
+
+    return perc, seco
 
 import multiprocessing as mp
 
-d = 100
-n_sample = [100,200,300,400,500,600,700,800,900,1000]
-n_iter = 100
-pool = mp.Pool(processes= 10, initializer=init_pool_processes)
+d1 = 800
+d2 = 800
+n_sample = 900
+n_iter = 2
+_alpha_ = [0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0]
+pool = mp.Pool(processes= 1, initializer=init_pool_processes)
 mode = "ECO"
 stockage = []
 
-for n in n_sample:
+for alpha in _alpha_:
 
-    input = {'d' : d, 'n_sample' : n}
+    input = {'d1' : d1, 'd2' : d2, 'n_sample' : n_sample, 'alpha' : alpha}
 
     if mode == "ECO":
 
-        result_objects = [pool.apply_async(operation_model_1_ECO, args = (input,i, 0.6)) for i in range(n_iter)]
+        result_objects = [pool.apply_async(operation_model_1CV_ECO, args = (input,i)) for i in range(n_iter)]
 
 
     results = [r.get() for r in result_objects]
@@ -207,5 +251,3 @@ pool.join()
 
 
 df.to_csv('results_model_4_ECO_100.csv')
-
-
