@@ -225,7 +225,7 @@ d2 = 800
 n_sample = 900
 n_iter = 100
 _alpha_ = [0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0]
-pool = mp.Pool(processes= 1, initializer=init_pool_processes)
+pool = mp.Pool(processes= 10, initializer=init_pool_processes)
 mode = "ECO"
 stockage = []
 
