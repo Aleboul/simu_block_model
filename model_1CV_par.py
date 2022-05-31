@@ -163,7 +163,7 @@ def make_sample(d1, d2, n_sample):
 def init_pool_processes():
     sp.random.seed()
 
-def operation_model_1CV_ECO(dict, seed):
+def operation_model_1CV_ECO(dict, seed, _alpha_):
     """ Operation to perform Monte carlo simulation
 
     Input
@@ -188,66 +188,69 @@ def operation_model_1CV_ECO(dict, seed):
     for j in range(0,d):
         for i in range(0,j):
             Theta[i,j] = Theta[j,i] = 2 - theta(R[:,[i,j]])
+    output = []
+    for alpha in _alpha_:
 
-    O_hat = clust(Theta, n = dict['n_sample'], alpha = dict['alpha'])
-    O_bar = {1 : np.arange(0,dict['d1']), 2 : np.arange(dict['d1'],d)}
+        O_hat = clust(Theta, n = dict['n_sample'], alpha = alpha)
+        print(O_hat)
+        O_bar = {1 : np.arange(0,dict['d1']), 2 : np.arange(dict['d1'],d)}
 
-    perc = perc_exact_recovery(O_hat, O_bar)
+        perc = perc_exact_recovery(O_hat, O_bar)
 
-    R_1 = np.zeros([test_sample_1.shape[0], d])
-    for j in range(0,d):
-        X_vec = test_sample_1[:,j]
-        R_1[:,j] = ecdf(X_vec)
+        R_1 = np.zeros([test_sample_1.shape[0], d])
+        for j in range(0,d):
+            X_vec = test_sample_1[:,j]
+            R_1[:,j] = ecdf(X_vec)
     
-    Theta = np.ones([d,d])
-    for j in range(0,d):
-        for i in range(0,j):
-            Theta[i,j] = Theta[j,i] = 2 - theta(R_1[:,[i,j]])
+        Theta = np.ones([d,d])
+        for j in range(0,d):
+            for i in range(0,j):
+                Theta[i,j] = Theta[j,i] = 2 - theta(R_1[:,[i,j]])
 
-    R_2 = np.zeros([test_sample_2.shape[0], d])
-    for j in range(0,d):
-        X_vec = test_sample_2[:,j]
-        R_2[:,j] = ecdf(X_vec)
+        R_2 = np.zeros([test_sample_2.shape[0], d])
+        for j in range(0,d):
+            X_vec = test_sample_2[:,j]
+            R_2[:,j] = ecdf(X_vec)
 
-    Theta = np.ones([d,d])
-    for j in range(0,d):
-        for i in range(0,j):
-            Theta[i,j] = Theta[j,i] = 2 - theta(R_2[:,[i,j]])
+        Theta = np.ones([d,d])
+        for j in range(0,d):
+            for i in range(0,j):
+                Theta[i,j] = Theta[j,i] = 2 - theta(R_2[:,[i,j]])
 
-    seco = SECO(R_1, R_2, O_hat)
+        seco = SECO(R_1, R_2, O_hat)
 
-    return perc, seco
+        output.append([perc, seco])
+
+    return output
 
 import multiprocessing as mp
 
 d1 = 800
 d2 = 800
+d = d1 + d2
 n_sample = 900
 n_iter = 100
-_alpha_ = [0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0]
-pool = mp.Pool(processes= 10, initializer=init_pool_processes)
+_alpha_ = np.array([0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0]) * np.sqrt(np.log(d) / n_sample // 3 )
+pool = mp.Pool(processes= 2, initializer=init_pool_processes)
 mode = "ECO"
 stockage = []
 
-for alpha in _alpha_:
+input = {'d1' : d1, 'd2' : d2, 'n_sample' : n_sample}
 
-    input = {'d1' : d1, 'd2' : d2, 'n_sample' : n_sample, 'alpha' : alpha}
+if mode == "ECO":
 
-    if mode == "ECO":
+    result_objects = [pool.apply_async(operation_model_1CV_ECO, args = (input,i, _alpha_)) for i in range(n_iter)]
 
-        result_objects = [pool.apply_async(operation_model_1CV_ECO, args = (input,i)) for i in range(n_iter)]
+results = [r.get() for r in result_objects]
 
+stockage.append(results)
 
-    results = [r.get() for r in result_objects]
+df = pd.DataFrame(stockage)
 
-    stockage.append(results)
-
-    df = pd.DataFrame(stockage)
-
-    print(df)
+print(df)
 
 pool.close()
 pool.join()
 
 
-df.to_csv('results_model_4_ECO_100.csv')
+df.to_csv('results_model_1CV_ECO_1600.csv')
