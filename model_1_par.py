@@ -89,7 +89,7 @@ def clust(Theta, n, alpha = None):
         alpha = 2 * np.sqrt(np.log(d)/n)
     
     cluster = {}
-    while len(S) > 0 and l < 10:
+    while len(S) > 0:
         l = l + 1
         if len(S) == 1:
             cluster[l] = np.array(S)

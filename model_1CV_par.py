@@ -190,9 +190,7 @@ def operation_model_1CV_ECO(dict, seed, _alpha_):
             Theta[i,j] = Theta[j,i] = 2 - theta(R[:,[i,j]])
     output = []
     for alpha in _alpha_:
-
         O_hat = clust(Theta, n = dict['n_sample'], alpha = alpha)
-        print(O_hat)
         O_bar = {1 : np.arange(0,dict['d1']), 2 : np.arange(dict['d1'],d)}
 
         perc = perc_exact_recovery(O_hat, O_bar)
@@ -218,8 +216,8 @@ def operation_model_1CV_ECO(dict, seed, _alpha_):
                 Theta[i,j] = Theta[j,i] = 2 - theta(R_2[:,[i,j]])
 
         seco = SECO(R_1, R_2, O_hat)
-
         output.append([perc, seco])
+
 
     return output
 
@@ -230,7 +228,7 @@ d2 = 800
 d = d1 + d2
 n_sample = 900
 n_iter = 100
-_alpha_ = np.array([0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0]) * np.sqrt(np.log(d) / n_sample // 3 )
+_alpha_ = np.array([0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0]) * np.sqrt(np.log(d) / n_sample )
 pool = mp.Pool(processes= 10, initializer=init_pool_processes)
 mode = "ECO"
 stockage = []
@@ -241,16 +239,25 @@ if mode == "ECO":
 
     result_objects = [pool.apply_async(operation_model_1CV_ECO, args = (input,i, _alpha_)) for i in range(n_iter)]
 
-results = [r.get() for r in result_objects]
+results = np.array([r.get() for r in result_objects])
 
-stockage.append(results)
+print(results)
 
-df = pd.DataFrame(stockage)
+seco = []
+perc = []
+for r in results:
+    seco.append(r[:,1])
+    perc.append(r[:,0])
 
-print(df)
+seco = pd.DataFrame(seco)
+perc = pd.DataFrame(perc)
+
+print(seco)
+print(perc)
 
 pool.close()
 pool.join()
 
 
-df.to_csv('results_model_1CV_ECO_1600.csv')
+perc.to_csv('perc_model_1CV_ECO_1600.csv')
+seco.to_csv('seco_model_1CV_ECO_1600.csv')
