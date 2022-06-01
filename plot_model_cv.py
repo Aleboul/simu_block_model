@@ -15,6 +15,8 @@ mean_perc = perc.mean(axis = 0)
 print(mean_seco)
 print(mean_perc)
 
+mean_seco = np.log(1+mean_seco - np.min(mean_seco))
+
 _alpha_ = np.array([0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0])
 fig, ax1 = plt.subplots()
 ax1.plot(_alpha_, mean_perc, color = 'salmon', marker= 'd', linestyle = 'solid', markerfacecolor = 'white')
