@@ -241,10 +241,10 @@ def operation_model_1CV_ECO(dict, seed, _alpha_):
 import multiprocessing as mp
 
 d= 1600
-n_sample = 1200
+n_sample = 2400
 K = 10
 n_iter = 100
-_alpha_ = np.array([0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0]) * np.sqrt(np.log(d) / n_sample )
+_alpha_ = np.array([0.25,0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0,4.25,4.5,4.75,5.0]) * np.sqrt(np.log(d) / 800 )
 pool = mp.Pool(processes= 10, initializer=init_pool_processes)
 mode = "ECO"
 stockage = []

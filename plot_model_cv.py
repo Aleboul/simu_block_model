@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 plt.style.use('seaborn-whitegrid')
 
-seco = pd.read_csv('seco_model_3CV_ECO_1600.csv', index_col = 0)
-perc = pd.read_csv('perc_model_3CV_ECO_1600.csv', index_col = 0)
+seco = pd.read_csv('seco_model_2CV_ECO_1600.csv', index_col = 0)
+perc = pd.read_csv('perc_model_2CV_ECO_1600.csv', index_col = 0)
 
 print(seco)
 print(perc)
